@@ -188,6 +188,9 @@ for i=1:length(recordings)
     end
 end
 %% output signal
+
+\
+
 out.fs = 1 / diff(T(1:2));
 out.S=S;
 out.T=T;

@@ -1,14 +1,15 @@
-function lfp = getLFP(varargin)
+function lfp = get2chLFP(varargin)
 
-% loads lfp data. can specify channels, intervals, average across channels,
-% resample, invert and more.
+% gets lfp from lfp file for each channel. can specify channels and
+% intervals, average across channels, and resample. if field recordings
+% than inverted.
 %  
 % INPUT
 %   basename    string. filename of lfp file. if empty retrieved from
 %               basepath. if .lfp should not include extension, if .wcp
 %               should include extension
 %   basepath    string. path to load filename and save output {pwd}
-%   extension   load from {'lfp'} (neurosuite), 'abf', 'wcp', or 'dat'.
+%   extension   load from {'lfp'} (neurosuite), 'abf', or 'wcp'.
 %   forceL      logical. force reload {false}.
 %   fs          numeric. requested sampling frequency {1250}
 %   interval    numeric mat. list of intervals to read from lfp file [s]
@@ -19,9 +20,6 @@ function lfp = getLFP(varargin)
 %   saveVar     save variable {1}.
 %   chavg       cell. each row contain the lfp channels you want to average
 %   
-% DEPENDENCIES
-%   ce_LFPfromDat (if extension = 'dat')
-% 
 % OUTPUT
 %   lfp         structure with the following fields:
 %   fs
@@ -35,12 +33,7 @@ function lfp = getLFP(varargin)
 % 
 % 01 apr 19 LH & RA
 % 19 nov 19 LH          load mat if exists  
-% 14 jan 19 LH          adapted for wcp and abf 
-%                       resampling
-%
-% TO DO LIST
-%       # lfp from dat
-
+% 14 jan 19 LH          adapted for wcp and abf and resampling
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % arguments
@@ -103,15 +96,14 @@ switch extension
         [lfp.data, info] = abf2load(loadname);
         fs_orig = 1 / (info.fADCSequenceInterval / 1000000); 
     case 'wcp'
-        data = import_wcp(basename, interval);
-        data.S = data.S{ch};
+        data = import_wcp(basename);
+        for a = 1:length(ch);
         if interval(2) ~= Inf
-            data.S = data.S(:, :);
+          data.S{a} = data.S{a}(:, interval(1) : interval(2));
         end
-        lfp.data = data.S(:);
+        lfp.data(:,a) = data.S{a}(:);
+        end
         fs_orig = data.fs;
-    case 'dat'
-        error('not ready yet')
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -132,9 +124,9 @@ elseif fs ~= fs_orig
 end
 
 % invert
-if ~strcmp(extension, 'lfp') && abs(min(lfp.data)) > max(lfp.data)
-    fprintf('\n inverting data \n\n')
+if  abs(min(lfp.data)) > max(lfp.data)
     lfp.data = -lfp.data;
+    fprintf('\n inverting data \n\n')
 end
 
 % convert to double
@@ -142,8 +134,10 @@ lfp.data = double(lfp.data);
 
 % filter
 if pli
-    linet = lineDetect('x', lfp.data, 'fs', fs, 'graphics', false);
-    lfp.data = lineRemove(lfp.data, linet, [], [], 0, 1);
+    for a = 1:length(ch);
+    linet = lineDetect('x', lfp.data(:,a), 'fs', fs, 'graphics', false);
+    lfp.data(:,a) = lineRemove(lfp.data(:,a), linet, [], [], 0, 1);
+    end
 end
 
 % flip such that samples x channels

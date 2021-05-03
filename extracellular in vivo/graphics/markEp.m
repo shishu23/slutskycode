@@ -52,6 +52,7 @@ suptitle({'Select episodes',...
     'right = complete',...
     'middle = end'});
 sb1 = subplot(3, 1, 1 : 2);
+
 plot(xdata, ydata, 'k', 'LineWidth', 1)
 hold on
 set(gca, 'TickLength', [0 0], 'Color', 'none')
@@ -63,7 +64,7 @@ Y = ylim;
 
 % bottom = center
 c = uicontrol('Style', 'slider', 'Position', [20 20 60 20]);
-c.Value = 0.5;
+c.Value = 0.2;
 c.Callback = @winCenter;
 % top = size
 b = uicontrol('Style', 'slider', 'Position', [20 60 60 20]);
